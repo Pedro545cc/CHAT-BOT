@@ -1,4 +1,5 @@
 
+
 openai
 flask
 requests
@@ -8,3 +9,13 @@ openai
 flask
 requests
 dotenv
+openai
+flask
+requests
+dotenv
+gunicorn==23.0.0
+openai
+flask
+requests
+dotenv
+

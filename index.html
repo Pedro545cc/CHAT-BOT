@@ -3,156 +3,137 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Gerador Automático de Vídeos</title>
+<title>Robo dos Criativos</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #fafafa;
-    color: #333;
+    background: #101820FF;
+    color: #FEE715FF;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
   }
-  h1 {
+  header {
+    background: #FEE715FF;
+    color: #101820FF;
+    padding: 1rem;
     text-align: center;
+    font-size: 1.8rem;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   }
-  #controls {
-    text-align: center;
-    margin-bottom: 20px;
+  #chat-container {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background: #1F2833FF;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    border-radius: 8px;
+    margin: 1rem;
   }
-  textarea {
-    width: 100%;
-    max-width: 600px;
-    height: 100px;
-    font-size: 1.2em;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
+  .message {
+    padding: 0.6rem 1rem;
+    border-radius: 20px;
+    max-width: 60%;
+    line-height: 1.3;
+    word-wrap: break-word;
+    font-size: 1rem;
+  }
+  .user-message {
+    background-color: #45A29EFF;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+  }
+  .bot-message {
+    background-color: #66FCF1FF;
+    color: #0B0C10FF;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+  }
+  footer {
+    display: flex;
+    padding: 1rem;
+    background: #0B0C10FF;
+    gap: 0.5rem;
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    border-radius: 9999px;
+    border: none;
+    font-size: 1rem;
+    outline: none;
   }
   button {
-    font-size: 1.1em;
-    padding: 10px 20px;
-    margin: 5px;
-    cursor: pointer;
-  }
-  #canvas-container {
-    display: flex;
-    justify-content: center;
-  }
-  canvas {
-    background: #222;
-    border-radius: 8px;
-    box-shadow: 0 0 12px rgba(0,0,0,0.4);
-  }
-  #download-link {
-    display: block;
-    margin-top: 15px;
-    text-align: center;
+    background: #FEE715FF;
+    color: #101820FF;
+    border: none;
+    padding: 0 1.5rem;
+    border-radius: 9999px;
     font-weight: bold;
-    color: #0066cc;
-    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  button:hover {
+    background-color: #FFD633FF;
   }
 </style>
 </head>
 <body>
-  <h1>Gerador Automático de Vídeos</h1>
-  <div id="controls">
-    <textarea id="text-input" placeholder="Digite o texto que deseja no vídeo..."></textarea><br />
-    <button id="start-btn">Iniciar Gravação</button>
-    <button id="stop-btn" disabled>Parar e Baixar Vídeo</button>
-  </div>
-  <div id="canvas-container">
-    <canvas id="video-canvas" width="640" height="360"></canvas>
-  </div>
-  <a id="download-link" href="#" download="video.webm" style="display:none;">Clique para baixar o vídeo</a>
+  <header>Robo dos Criativos</header>
+  <div id="chat-container" aria-live="polite" aria-label="Área de conversa"></div>
+  <footer>
+    <input type="text" id="user-input" placeholder="Digite sua mensagem..." aria-label="Digite sua mensagem" />
+    <button id="send-button" disabled>Enviar</button>
+  </footer>
+<script>
+  const chatContainer = document.getElementById('chat-container');
+  const userInput = document.getElementById('user-input');
+  const sendButton = document.getElementById('send-button');
 
-  <script>
-    const canvas = document.getElementById('video-canvas');
-    const ctx = canvas.getContext('2d');
-    const textInput = document.getElementById('text-input');
-    const startBtn = document.getElementById('start-btn');
-    const stopBtn = document.getElementById('stop-btn');
-    const downloadLink = document.getElementById('download-link');
+  userInput.addEventListener('input', () => {
+    sendButton.disabled = userInput.value.trim() === '';
+  });
 
-    let mediaRecorder;
-    let recordedChunks = [];
-    let animationId;
-    let startTime;
+  function appendMessage(text, className) {
+    const msgDiv = document.createElement('div');
+    msgDiv.textContent = text;
+    msgDiv.className = 'message ' + className;
+    chatContainer.appendChild(msgDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
 
-    // Função para desenhar texto animado no canvas
-    function draw(timestamp) {
-      if (!startTime) startTime = timestamp;
-      const elapsed = timestamp - startTime;
-
-      // Fundo preto
-      ctx.fillStyle = '#222';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Texto
-      const text = textInput.value.trim() || "Seu texto aparecerá aqui...";
-      ctx.font = 'bold 48px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#ffffff';
-
-      // Animação fade in e out (3s fade in, 3s fade out, repete)
-      const cycle = 6000;
-      const phase = elapsed % cycle;
-
-      let alpha = 0;
-      if (phase < 3000) {
-        alpha = phase / 3000; // fade in
-      } else {
-        alpha = 1 - ((phase - 3000) / 3000); // fade out
-      }
-      ctx.globalAlpha = alpha;
-
-      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-
-      ctx.globalAlpha = 1;
-
-      animationId = requestAnimationFrame(draw);
+  async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+    appendMessage(text, 'user-message');
+    userInput.value = '';
+    sendButton.disabled = true;
+    try {
+      const response = await fetch('/api/message', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: text}),
+      });
+      const data = await response.json();
+      appendMessage(data.response, 'bot-message');
+    } catch (e) {
+      appendMessage('Erro na comunicação com o servidor.', 'bot-message');
     }
+  }
 
-    startBtn.addEventListener('click', () => {
-      // Reset gravação
-      recordedChunks = [];
+  sendButton.addEventListener('click', sendMessage);
+  userInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !sendButton.disabled) {
+      sendMessage();
+    }
+  });
 
-      // Começar animação
-      startTime = null;
-      animationId = requestAnimationFrame(draw);
-
-      // Capturar stream do canvas
-      const stream = canvas.captureStream(30); // 30fps
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
-
-      mediaRecorder.ondataavailable = function(e) {
-        if (e.data.size > 0) {
-          recordedChunks.push(e.data);
-        }
-      };
-
-      mediaRecorder.onstop = function() {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        const url = URL.createObjectURL(blob);
-        downloadLink.href = url;
-        downloadLink.style.display = 'inline';
-      };
-
-      mediaRecorder.start();
-
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-      downloadLink.style.display = 'none';
-      downloadLink.href = '#';
-    });
-
-    stopBtn.addEventListener('click', () => {
-      cancelAnimationFrame(animationId);
-
-      mediaRecorder.stop();
-
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-    });
-  </script>
+  appendMessage('Olá! Eu sou o Robo dos Criativos. Como posso te ajudar?', 'bot-message');
+</script>
 </body>
 </html>

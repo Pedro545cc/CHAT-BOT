@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Interativo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        #chat-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            background: white;
+            max-width: 400px;
+            margin: auto;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #dcf8c6;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #ececec;
+            text-align: left;
+        }
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Chatbot Interativo</h2>
+<div id="chat-container"></div>
+<input type="text" id="user-input" placeholder="Digite sua mensagem..." />
+<button id="send-button">Enviar</button>
+
+<script>
+    const chatContainer = document.getElementById('chat-container');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+
+    function appendMessage(text, className) {
+        const messageDiv = document.createElement('div');
+        messageDiv.textContent = text;
+        messageDiv.className = 'message ' + className;
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight; // Rolagem automática
+    }
+
+    function getBotResponse(userText) {
+        // Respostas simples do robô
+        if (userText.toLowerCase().includes('olá')) {
+            return "Olá! Como posso ajudar você hoje?";
+        } else if (userText.toLowerCase().includes('tchau')) {
+            return "Até logo! Volte sempre.";
+        } else {
+            return "Desculpe, não entendi. Pode reformular?";
+        }
+    }
+
+    sendButton.addEventListener('click', () => {
+        const userText = userInput.value.trim();
+        if (userText) {
+            appendMessage(userText, 'user-message');
+            userInput.value = '';
+
+            // Resposta do robô
+            const botResponse = getBotResponse(userText);
+            setTimeout(() => {
+                appendMessage(botResponse, 'bot-message');
+            }, 500); // Simula um atraso na resposta
+        }
+    });
+
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendButton.click();
+        }
+    });
+</script>
+
+</body>
+</html>

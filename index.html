@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gerador Automático de Vídeos</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #fafafa;
+    color: #333;
+  }
+  h1 {
+    text-align: center;
+  }
+  #controls {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  textarea {
+    width: 100%;
+    max-width: 600px;
+    height: 100px;
+    font-size: 1.2em;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+  button {
+    font-size: 1.1em;
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+  }
+  #canvas-container {
+    display: flex;
+    justify-content: center;
+  }
+  canvas {
+    background: #222;
+    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.4);
+  }
+  #download-link {
+    display: block;
+    margin-top: 15px;
+    text-align: center;
+    font-weight: bold;
+    color: #0066cc;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+  <h1>Gerador Automático de Vídeos</h1>
+  <div id="controls">
+    <textarea id="text-input" placeholder="Digite o texto que deseja no vídeo..."></textarea><br />
+    <button id="start-btn">Iniciar Gravação</button>
+    <button id="stop-btn" disabled>Parar e Baixar Vídeo</button>
+  </div>
+  <div id="canvas-container">
+    <canvas id="video-canvas" width="640" height="360"></canvas>
+  </div>
+  <a id="download-link" href="#" download="video.webm" style="display:none;">Clique para baixar o vídeo</a>
+
+  <script>
+    const canvas = document.getElementById('video-canvas');
+    const ctx = canvas.getContext('2d');
+    const textInput = document.getElementById('text-input');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const downloadLink = document.getElementById('download-link');
+
+    let mediaRecorder;
+    let recordedChunks = [];
+    let animationId;
+    let startTime;
+
+    // Função para desenhar texto animado no canvas
+    function draw(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+
+      // Fundo preto
+      ctx.fillStyle = '#222';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Texto
+      const text = textInput.value.trim() || "Seu texto aparecerá aqui...";
+      ctx.font = 'bold 48px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+
+      // Animação fade in e out (3s fade in, 3s fade out, repete)
+      const cycle = 6000;
+      const phase = elapsed % cycle;
+
+      let alpha = 0;
+      if (phase < 3000) {
+        alpha = phase / 3000; // fade in
+      } else {
+        alpha = 1 - ((phase - 3000) / 3000); // fade out
+      }
+      ctx.globalAlpha = alpha;
+
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+      ctx.globalAlpha = 1;
+
+      animationId = requestAnimationFrame(draw);
+    }
+
+    startBtn.addEventListener('click', () => {
+      // Reset gravação
+      recordedChunks = [];
+
+      // Começar animação
+      startTime = null;
+      animationId = requestAnimationFrame(draw);
+
+      // Capturar stream do canvas
+      const stream = canvas.captureStream(30); // 30fps
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+
+      mediaRecorder.ondataavailable = function(e) {
+        if (e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = function() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.style.display = 'inline';
+      };
+
+      mediaRecorder.start();
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      downloadLink.style.display = 'none';
+      downloadLink.href = '#';
+    });
+
+    stopBtn.addEventListener('click', () => {
+      cancelAnimationFrame(animationId);
+
+      mediaRecorder.stop();
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
+  </script>
+</body>
+</html>

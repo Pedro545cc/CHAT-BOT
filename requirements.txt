@@ -1,0 +1,12 @@
+<<<<<<< HEAD
+openai
+flask
+requests
+dotenv
+gunicorn==20.1.0
+=======
+openai
+flask
+requests
+dotenv
+>>>>>>> 34fb2c06abfb31cb27b8e84f3a5c31787191f040
